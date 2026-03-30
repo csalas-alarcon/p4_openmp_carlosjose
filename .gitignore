@@ -1,6 +1,7 @@
 # Own
 
 .vscode
+bin
 
 # Prerequisites
 *.d
