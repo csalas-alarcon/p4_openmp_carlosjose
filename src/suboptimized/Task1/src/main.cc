@@ -1,19 +1,19 @@
 // Task1/src/main.cc
 
-// Generic Imports
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include "png.h"
 #include <vector>
 #include <assert.h>
 #include <iostream>
 #include <memory>
-#include <string>
-#include <chrono>
-#include "png.h"
-// Local Imports
 #include "utils/image.h"
 #include "utils/dct.h"
+#include <string>
+#include <chrono>
+#include <future> // Añadido para std::async
+#include <omp.h>  // Añadido para OpenMP
 
 // 3x3 Statistical Region Merging Kernel
 Image<float> get_srm_3x3() {
@@ -116,18 +116,23 @@ int main(int argc, char **argv) {
         std::cerr<<"Image filename missing from arguments. Usage ./dct <filename>"<<std::endl;
         exit(1);
     }
-    // Declaration here because we paralelize after
     int block_size=8;
-    // Loads Image
     Image<unsigned char> image = load_from_file(argv[1]);
-    // Saves SRM
-    save_to_file("srm_kernel_3x3.png", compute_srm(image, 3));
-    save_to_file("srm_kernel_5x5.png", compute_srm(image, 5));
-    // Sabes ELA
-    save_to_file("ela.png", compute_ela(image, 90));
-    // Sabes DCT
-    save_to_file("dct_invert.png", compute_dct(image, block_size, true));
-    save_to_file("dct_direct.png", compute_dct(image, block_size, false));
+
+    // SUB-OPTIMIZACIÓN: Evaluación Perezosa. 
+    // Obligamos al sistema a no crear hilos reales, ejecutando todo de forma secuencial.
+    auto f_srm3    = std::async(std::launch::deferred, compute_srm, image, 3);
+    auto f_srm5    = std::async(std::launch::deferred, compute_srm, image, 5);
+    auto f_ela     = std::async(std::launch::deferred, compute_ela, image, 90);
+    auto f_dct_inv = std::async(std::launch::deferred, compute_dct, image, block_size, true);
+    auto f_dct_dir = std::async(std::launch::deferred, compute_dct, image, block_size, false);
+
+    // La barrera de consumo (.get()) dispara la ejecución secuencial.
+    save_to_file("srm_kernel_3x3.png", f_srm3.get());
+    save_to_file("srm_kernel_5x5.png", f_srm5.get());
+    save_to_file("ela.png", f_ela.get());
+    save_to_file("dct_invert.png", f_dct_inv.get());
+    save_to_file("dct_direct.png", f_dct_dir.get());
 
     return 0;
 }

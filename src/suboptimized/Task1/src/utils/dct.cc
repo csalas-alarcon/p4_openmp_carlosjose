@@ -1,14 +1,16 @@
 #include "dct.h"
 #include "image.h"
 #include <math.h>
+#include <omp.h> // Añadido para OpenMP
 
 void dct::direct(float **dct, const Block<float> &matrix, int channel)
 {
     int m = matrix.size;
     int n = m;
 
-    float ci, cj, dct1;
+    float ci, cj;
 
+    #pragma omp parallel for private(ci, cj) shared(dct, matrix, channel, m, n)
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             if (i == 0)
@@ -34,10 +36,10 @@ void dct::direct(float **dct, const Block<float> &matrix, int channel)
 }
 
 void dct::inverse(Block<float> &idctMatrix, float **dctMatrix, int channel, float min, float max){
-
     float Cu, Cv;
     int size = idctMatrix.size;
                    
+    #pragma omp parallel for private(Cu, Cv) shared(idctMatrix, dctMatrix, channel, size)
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) { 
             float sum = 0.0;
@@ -64,12 +66,17 @@ void dct::inverse(Block<float> &idctMatrix, float **dctMatrix, int channel, floa
  
 void dct::normalize(float **DCTMatrix, int size){
     float max_v=-99999999.0, min_v=999999999.0;
+    
+    // Aquí el bucle tiene dependencias. Usamos reducción explícita.
+    #pragma omp parallel for reduction(min:min_v) reduction(max:max_v) shared(DCTMatrix, size)
     for (int i=0;i<size;i++){
         for (int j=0;j<size;j++){
             if (DCTMatrix[i][j] < min_v) min_v=DCTMatrix[i][j];
             if (DCTMatrix[i][j] > max_v) max_v=DCTMatrix[i][j];
         }
     }
+    
+    #pragma omp parallel for shared(DCTMatrix, size, min_v, max_v)
     for (int i=0;i<size;i++){
         for (int j=0;j<size;j++){
             DCTMatrix[i][j] = 255.0 * (DCTMatrix[i][j] -min_v)/ (max_v - min_v);
@@ -78,6 +85,7 @@ void dct::normalize(float **DCTMatrix, int size){
 }
 
 void dct::assign(float **DCTMatrix, Block<float> &block, int channel){
+    #pragma omp parallel for shared(DCTMatrix, block, channel)
     for (int i=0;i<block.size;i++){
         for (int j=0;j<block.size;j++){
             block.set_pixel(i, j, channel, (float)DCTMatrix[i][j]);
