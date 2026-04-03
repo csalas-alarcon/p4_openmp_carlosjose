@@ -1,0 +1,81 @@
+graph TD
+    %% NODO RAÍZ SECUENCIAL 
+    Start((Inicio del Programa)) --> Load[Lectura y carga en memoria de la imagen original]
+    
+    %% BARRERA DE DIVERGENCIA MACRO 
+    Load --> ForkMacro{Bifurcación Macro: <br/>Lanzamiento de 5 tareas <br/>asíncronas independientes}
+
+    %% DECLARACIÓN DE LAS RAMAS ANTES DE LOS SUBGRAFOS PARA FORZAR LA SIMETRÍA
+    ForkMacro --> S3_Gray
+    ForkMacro --> S5_Gray
+    ForkMacro --> ELA_Gray
+    ForkMacro --> D_Gray
+    ForkMacro --> I_Gray
+
+    %% ==========================================
+    %% SUBGRAFO 1: ANÁLISIS SRM 3x3
+    %% ==========================================
+    subgraph Tarea_SRM_3x3 [1. Análisis Forense: Filtro SRM 3x3]
+        S3_Gray[Conversión a escala de grises <br/> y formato de coma flotante] --> S3_Conv{Fork Micro OpenMP: <br/> Reparto de píxeles entre hilos}
+        S3_Conv --> S3_Calc[Cálculo matemático iterativo: <br/> Convolución con matriz <br/>SRM 3x3]
+        S3_Calc --> S3_JoinConv{Sincronización de hilos <br/> al terminar la convolución}
+        S3_JoinConv --> S3_Abs[Cálculo del valor absoluto <br/> de la matriz resultante]
+        S3_Abs --> S3_Norm[Normalización al rango <br/>0-255 usando cláusula de <br/>reducción min/max]
+        S3_Norm --> S3_Save[Escritura secuencial en disco: <br/> srm_kernel_3x3.png]
+    end
+
+    %% ==========================================
+    %% SUBGRAFO 2: ANÁLISIS SRM 5x5
+    %% ==========================================
+    subgraph Tarea_SRM_5x5 [2. Análisis Forense: Filtro SRM 5x5]
+        S5_Gray[Conversión a escala de grises <br/> y formato de coma flotante] --> S5_Conv{Fork Micro OpenMP: <br/> Reparto de píxeles entre hilos}
+        S5_Conv --> S5_Calc[Cálculo matemático iterativo: <br/> Convolución con matriz <br/>SRM 5x5]
+        S5_Calc --> S5_JoinConv{Sincronización de hilos <br/> al terminar la convolución}
+        S5_JoinConv --> S5_Abs[Cálculo del valor absoluto <br/> de la matriz resultante]
+        S5_Abs --> S5_Norm[Normalización al rango <br/> 0-255 usando cláusula de <br/> reducción min/max]
+        S5_Norm --> S5_Save[Escritura secuencial en disco: <br/> srm_kernel_5x5.png]
+    end
+
+    %% ==========================================
+    %% SUBGRAFO 3: ANÁLISIS ELA (Error Level Analysis)
+    %% ==========================================
+    subgraph Tarea_ELA [3. Análisis Forense: Nivel de Error JPEG]
+        ELA_Gray[Conversión a escala de grises] --> ELA_IO1[Cuello de botella I/O: <br/> Escribir compresión <br/>temporal _temp.jpg]
+        ELA_IO1 --> ELA_IO2[Cuello de botella I/O: <br/> Leer _temp.jpg con <br/>pérdida de calidad]
+        ELA_IO2 --> ELA_Diff{Fork Micro OpenMP: <br/> Reparto de píxeles <br/>entre hilos}
+        ELA_Diff --> ELA_Calc[Cálculo de diferencia: <br/> Imagen comprimida <br/>vs original]
+        ELA_Calc --> ELA_Join{Sincronización de hilos <br/> al terminar la diferencia}
+        ELA_Join --> ELA_Abs[Cálculo del valor absoluto <br/> de la diferencia]
+        ELA_Abs --> ELA_Norm[Normalización al rango <br/>0-255 usando cláusula de <br/>reducción min/max]
+        ELA_Norm --> ELA_Save[Escritura secuencial en<br/> disco: ela.png]
+    end
+
+    %% ==========================================
+    %% SUBGRAFO 4: DCT DIRECTA
+    %% ==========================================
+    subgraph Tarea_DCT_Dir[4. Análisis Frecuencias: DCT Directa]
+        D_Gray[Conversión a escala de grises <br/> y formato de coma flotante] --> D_Blocks[División lógica de la imagen <br/> en vectores de bloques <br/>de 8x8]
+        D_Blocks --> D_Fork{Fork Micro OpenMP: <br/> Reparto de bloques <br/>8x8 entre hilos}
+        D_Fork --> D_B[Procesamiento por bloque: <br/> Reserva de memoria, <br/>cálculo DCT de frecuencias <br/>y asignación]
+        D_B --> D_Join{Sincronización de hilos <br/> al terminar todos los bloques}
+        D_Join --> D_Save[Escritura secuencial en disco: <br/> dct_direct.png]
+    end
+
+    %% ==========================================
+    %% SUBGRAFO 5: DCT INVERSA
+    %% ==========================================
+    subgraph Tarea_DCT_Inv[5. Análisis Frecuencias: DCT Inversa]
+        I_Gray[Conversión a escala de grises <br/> y formato de coma flotante] --> I_Blocks[División lógica de la imagen <br/> en vectores de bloques <br/>de 8x8]
+        I_Blocks --> I_Fork{Fork Micro OpenMP: <br/> Reparto de bloques <br/>8x8 entre hilos}
+        I_Fork --> I_B[Procesamiento por bloque: <br/> DCT directa, purga de altas frecuencias <br/> y cálculo de DCT inversa]
+        I_B --> I_Join{Sincronización de hilos <br/> al terminar todos los bloques}
+        I_Join --> I_Save[Escritura secuencial en disco: <br/> dct_invert.png]
+    end
+
+    %% BARRERA DE CONVERGENCIA MACRO
+    S3_Save --> FinalJoin{Barrera de Sincronización<br/> Macro: Esperar a que <br/>terminen las 5 tareas}
+    S5_Save --> FinalJoin
+    ELA_Save --> FinalJoin
+    D_Save --> FinalJoin
+    I_Save --> FinalJoin
+    FinalJoin --> End((Fin de la ejecución <br/>del programa))
