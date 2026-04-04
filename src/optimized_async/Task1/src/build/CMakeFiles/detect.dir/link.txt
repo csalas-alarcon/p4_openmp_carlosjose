@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/detect.dir/main.cc.o -o detect  -lPNG::PNG -lJPEG::JPEG utils/libutils.a -lPNG::PNG -lJPEG::JPEG 
