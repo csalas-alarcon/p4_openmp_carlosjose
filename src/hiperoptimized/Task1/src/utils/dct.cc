@@ -1,26 +1,27 @@
 #include "dct.h"
 #include "image.h"
 #include <math.h>
+#include "dct.h"
+#include "image.h"
+#include <math.h>
+#include <omp.h>
 
 void dct::direct(float **dct, const Block<float> &matrix, int channel)
 {
     int m = matrix.size;
     int n = m;
-
-    float ci, cj, dct1;
+    float ci, cj;
 
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
-            if (i == 0)
-                ci = 1 / sqrt(m);
-            else
-                ci = sqrt(2) / sqrt(m);
-            if (j == 0)
-                cj = 1 / sqrt(n);
-            else
-                cj = sqrt(2) / sqrt(n);
+            if (i == 0) ci = 1 / sqrt(m); else ci = sqrt(2) / sqrt(m);
+            if (j == 0) cj = 1 / sqrt(n); else cj = sqrt(2) / sqrt(n);
 
             float sum = 0;
+            
+            // SOBRE-PARALELIZACIÓN: Crear un equipo de hilos para el bucle más interno (m=8).
+            // El sistema operativo tardará más en gestionar los hilos que en hacer 8 multiplicaciones.
+            #pragma omp parallel for reduction(+:sum)
             for (int k = 0; k < m; k++) {
                 for (int l = 0; l < n; l++) {
                     sum += matrix.get_pixel(k, l, channel) * 
@@ -34,24 +35,20 @@ void dct::direct(float **dct, const Block<float> &matrix, int channel)
 }
 
 void dct::inverse(Block<float> &idctMatrix, float **dctMatrix, int channel, float min, float max){
-
     float Cu, Cv;
     int size = idctMatrix.size;
                    
     for (int i = 0; i < size; ++i) {
         for (int j = 0; j < size; ++j) { 
             float sum = 0.0;
+            
+            // SOBRE-PARALELIZACIÓN: Repetimos el patrón destructivo. Forzar reducción 
+            // en un bucle anidado minúsculo dispara la sincronización inútil (overhead).
+            #pragma omp parallel for reduction(+:sum) private(Cu, Cv)
             for (int u = 0; u < size; u++) {
                 for (int v = 0; v < size; v++) {
-                    if (u == 0)
-                        Cu = 1./sqrt(2.0);
-                    else
-                        Cu = 1.0;
-
-                    if (v == 0)
-                        Cv = 1./sqrt(2.0);
-                    else
-                        Cv = (1.0);  
+                    if (u == 0) Cu = 1./sqrt(2.0); else Cu = 1.0;
+                    if (v == 0) Cv = 1./sqrt(2.0); else Cv = (1.0);  
 
                     sum += (dctMatrix[u][v] * cos((2 * i + 1) * u * M_PI / (size*2)) *
                             cos((2 * j + 1) * v * M_PI / (size*2)));

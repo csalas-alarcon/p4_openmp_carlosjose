@@ -174,10 +174,15 @@ template <class T> Image<T> Image<T>::convolution(const Image<float> &kernel) co
     assert(kernel.width%2 != 0 && kernel.height%2 != 0 && kernel.width == kernel.height && kernel.channels==1);
     int kernel_size = kernel.width;
     Image<T> convolved(width, height, channels);
+    
     for(int j=0;j<height;j++){
         for(int i=0;i<width; i++){
             for(int c=0;c<channels;c++){
                 float sum = 0.0;
+                
+                // SOBRE-PARALELIZACIÓN: Abrir hilos para un bucle de solo 3 iteraciones.
+                // Destruye totalmente la predicción de caché y colapsa el scheduler de Linux.
+                #pragma omp parallel for reduction(+:sum)
                 for(int u=0;u<kernel_size;u++){
                     for(int v=0;v<kernel_size;v++){
                         int s = (j + u - kernel_size/2)%height;
