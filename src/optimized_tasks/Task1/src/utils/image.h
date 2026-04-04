@@ -5,6 +5,7 @@
 #include <iostream>
 #include "assert.h"
 #include <string>
+#include <omp.h> // Añadido para asegurar la integración de OpenMP
 
 template <typename T> class Block;
 
@@ -105,6 +106,11 @@ template <class T> void Image<T>::set(int row, int col, int channel, T value) {
 template <class T> Image<T> Image<T>::operator*(const Image<T>& other) const {
     assert(width == other.width && height == other.height && channels == other.channels);
     Image<T> new_image(width, height, channels);
+    
+    // OPTIMIZACIÓN MICRO: 'collapse(2)' aplana los bucles J e I en uno solo más grande.
+    // Usamos 'schedule(static)' porque la multiplicación cuesta lo mismo para cada píxel,
+    // eliminando el overhead del planificador de OpenMP en tiempo de ejecución.
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -113,11 +119,15 @@ template <class T> Image<T> Image<T>::operator*(const Image<T>& other) const {
             }
         }    
     }
-        
     return new_image;
 }
+
 template <class T> Image<T> Image<T>::operator*(float scalar) const {
     Image<T> new_image(width, height, channels);
+    
+    // OPTIMIZACIÓN MICRO: Mismo principio estático. Las escrituras en 'new_image' 
+    // son en posiciones disjuntas, lo que garantiza thread-safety puro sin cerrojos.
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -126,12 +136,16 @@ template <class T> Image<T> Image<T>::operator*(float scalar) const {
             }
         }    
     }
-        
     return new_image;
 }
+
 template <class T> Image<T> Image<T>::operator+(const Image<T>& other) const {
     assert(width == other.width && height == other.height && channels == other.channels);
     Image<T> new_image(width, height, channels);
+    
+    // OPTIMIZACIÓN MICRO: Paralelización espacial 2D aplanada.
+    // Maximiza el uso del ancho de banda de la memoria caché al procesar píxeles contiguos.
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -140,11 +154,13 @@ template <class T> Image<T> Image<T>::operator+(const Image<T>& other) const {
             }
         }    
     }
-        
     return new_image;
 }
+
 template <class T> Image<T> Image<T>::operator+(float scalar) const {
     Image<T> new_image(width, height, channels);
+    
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -153,11 +169,13 @@ template <class T> Image<T> Image<T>::operator+(float scalar) const {
             }
         }    
     }
-        
     return new_image;
 }
+
 template <class T> Image<T> Image<T>::abs() const {
     Image<T> new_image(width, height, channels);
+    
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -166,7 +184,6 @@ template <class T> Image<T> Image<T>::abs() const {
             }
         }    
     }
-        
     return new_image;
 }
 
@@ -174,6 +191,10 @@ template <class T> Image<T> Image<T>::convolution(const Image<float> &kernel) co
     assert(kernel.width%2 != 0 && kernel.height%2 != 0 && kernel.width == kernel.height && kernel.channels==1);
     int kernel_size = kernel.width;
     Image<T> convolved(width, height, channels);
+    
+    // OPTIMIZACIÓN MICRO: Usamos 'schedule(guided)' porque el cálculo en los bordes de la 
+    // imagen requiere menos iteraciones válidas ("continue"). Guided balancea esta carga asimétrica.
+    #pragma omp parallel for collapse(2) schedule(guided)
     for(int j=0;j<height;j++){
         for(int i=0;i<width; i++){
             for(int c=0;c<channels;c++){
@@ -196,6 +217,8 @@ template <class T> Image<T> Image<T>::convolution(const Image<float> &kernel) co
 
 template <class T> template <typename S> Image<S> Image<T>::convert() const {
     Image<S> new_image(width, height, channels);
+    
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -204,13 +227,14 @@ template <class T> template <typename S> Image<S> Image<T>::convert() const {
             }
         }    
     }
-        
     return new_image;
 }
 
 template <class T> Image<T> Image<T>::to_grayscale() const {
     if (channels == 1) return convert<T>();
     Image<T> image(width, height, 1);
+    
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++){
         for(int i=0;i<width;i++){
             image.set(j, i, 0, (T)((0.299 * this->get(j, i, 0) + (0.587 * this->get(j, i, 1)) + (0.114 * this->get(j,i,2)))));
@@ -218,10 +242,16 @@ template <class T> Image<T> Image<T>::to_grayscale() const {
     }
     return image;
 }
+
 template <class T> Image<float> Image<T>::normalized() const {
     Image<float> new_image(width, height, channels);
     float max_value = -999999999;
     float min_value = 999999999;
+    
+    // OPTIMIZACIÓN MICRO (CRÍTICA): La búsqueda de mínimos y máximos globales genera dependencias.
+    // La cláusula 'reduction' ordena a OpenMP crear variables privadas por hilo y fusionarlas 
+    // algorítmicamente al final, evitando colisiones letales (race conditions).
+    #pragma omp parallel for collapse(2) reduction(max:max_value) reduction(min:min_value)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -232,6 +262,7 @@ template <class T> Image<float> Image<T>::normalized() const {
         }    
     }
 
+    #pragma omp parallel for collapse(2) schedule(static)
     for(int j=0;j<height;j++)
     {
         for(int i=0;i<width;i++){
@@ -240,7 +271,6 @@ template <class T> Image<float> Image<T>::normalized() const {
             }
         }    
     }
-        
     return new_image;
 }
 
@@ -248,6 +278,10 @@ template <class T> std::vector<Block<T>> Image<T>::get_blocks(int block_size) {
   	int depth = channels;
   	assert(width % block_size == 0 || height % block_size == 0);
   	std::vector<Block<T>> blocks;
+  	
+  	// NOTA ARQUITECTÓNICA: Este bucle NO se paraleliza intencionadamente.
+  	// El método std::vector::push_back() muta la estructura del contenedor (memoria dinámica).
+  	// Paralelizarlo sin cerrojos generaría corrupción de memoria (condición de carrera pura).
   	for (int row=0;row<height;row+=block_size)
   		for(int col=0;col<width;col+=block_size){
   			Block<T> b;
