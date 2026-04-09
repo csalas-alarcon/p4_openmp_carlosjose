@@ -1,4 +1,5 @@
 #!/bin/bash
+#runzero.sh
 
 echo "[TASK 0]- Compilando Archivos"
 

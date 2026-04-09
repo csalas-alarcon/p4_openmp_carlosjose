@@ -3,6 +3,7 @@
 bin
 
 build/
+build
 detect
 CMakeCache.txt
 CMakeFiles/
