@@ -1,7 +1,11 @@
 # Own
-
 .vscode
 bin
+
+build/
+detect
+CMakeCache.txt
+CMakeFiles/
 
 # Prerequisites
 *.d
