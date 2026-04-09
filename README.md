@@ -1,27 +1,58 @@
-# p4_openmp_carlosjose
-Broom Broom
+# Práctica 4: Análisis Forense de Manipulación de Imágenes Digitales
 
-Ejericios
+Repositorio para la Práctica 4 de la asignatura Computación de Alto Rendimiento (CAR). El objetivo de este proyecto es paralelizar un algoritmo secuencial de detección de manipulación de imágenes (análisis de ruido SRM, análisis de compresión ELA y análisis de frecuencias DCT) utilizando OpenMP y programación asíncrona (`std::async`) en C++.
 
-### 1.1: Analiza el código e identifica los distintos procesos
+## Autores
+* Carlos Salas Alarcón
+* José Francisco Hurtado Valero
 
-Identificar los distintos procesos que se aplican sobre la imagen manipulada
-y elaborar un diagrama de dependencias. Identifica si se puede ejecutar algunos procesos en paralelo y las dependencias entre
-ellos.
+## Estructura del Repositorio
 
-### 1.2: Analiza el código de cada proceso y el tiempo
+El proyecto se divide en diferentes versiones experimentales para analizar el impacto y las ganancias de rendimiento de diferentes enfoques de paralelización:
 
-Realiza un diagrama de flujo de cada uno e identificar posibles puntos
-paralelizables. Ejecuta el código secuencial y calcula el tiempo que tarda cada proceso.
+* **`/base`**: Código secuencial original sin paralelizar.
+* **`/suboptimo`**: Implementación con una granularidad ineficiente y evaluación asíncrona perezosa (`std::launch::deferred`).
+* **`/optimo_async`**: Implementación híbrida óptima utilizando `std::async` para la orquestación a nivel macro-arquitectónico y OpenMP para los bucles espaciales.
+* **`/optimo_omp`**: Implementación alternativa utilizando tareas dinámicas de OpenMP (`#pragma omp task`) en lugar de `std::async`.
+* **`/hiperoptimizado`**: Versión sobre-paralelizada (anidamiento extremo) diseñada para forzar y analizar el colapso por *overhead* del sistema.
 
-### 1.3 Paralelización
+## Dependencias
 
-Haced pruebas paralelizando diferentes partes y usando diferentes estrategias para observar la ganancia de
-rendimiento.
+El proyecto utiliza las librerías `libjpeg` y `libpng` para el procesamiento de imágenes. En los equipos del laboratorio ya están instaladas. Para compilar en un equipo propio (Linux), instala las dependencias con:
 
-Responded a las siguientes preguntas:
-● ¿Se obtiene un mejor rendimiento paralelizando todos las partes posibles?
-● ¿Se degrada el rendimiento al paralelizar ciertas partes?
-● Si es así, ¿a qué creéis que se debe esa degradación?
-● ¿Cúal es la mejor estrategia de paralelización?
+```bash
+sudo apt update
+sudo apt install libpng-dev libjpeg-dev
+```
 
+## Compilación
+
+El proyecto utiliza CMake para gestionar la construcción de los ejecutables. Los archivos `CMakeLists.txt` incluyen automáticamente el flag `-fopenmp`.
+
+Para compilar cualquiera de las versiones, sitúate en la carpeta correspondiente y ejecuta:
+
+```bash
+# 1. Configurar el entorno de construcción con CMake
+cmake -S . -B ./build
+
+# 2. Entrar en la carpeta generada
+cd build
+
+# 3. Construir el ejecutable
+make
+```
+
+## Ejecución
+
+El programa procesa imágenes en formato PNG o JPG que deben ser cuadradas. Tras compilar, ejecuta el programa desde la carpeta `build` pasando la ruta de la imagen como argumento:
+
+```bash
+./detect <ruta_a_la_imagen>
+```
+
+*Ejemplo:*
+```bash
+./detect ../imagenes/imagen_prueba.png
+```
+
+El programa generará varias imágenes de salida en el mismo directorio de ejecución, mostrando los resultados de los distintos filtros (SRM 3x3, SRM 5x5, ELA, DCT Directa, DCT Inversa).
