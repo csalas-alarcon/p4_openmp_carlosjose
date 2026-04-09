@@ -8,6 +8,8 @@ detect
 CMakeCache.txt
 CMakeFiles/
 
+.venv
+
 # Prerequisites
 *.d
 
