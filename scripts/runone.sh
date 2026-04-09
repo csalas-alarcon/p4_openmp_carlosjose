@@ -3,8 +3,8 @@
 
 # Comprobar que se le pasan los argumentos correctos
 if [ "$#" -ne 2 ]; then
-    echo "Uso: ./run_task1.sh <version> <ruta_imagen>"
-    echo "Ejemplo: ./run_task1.sh optimo_async mi_imagen.png"
+    echo "Uso: ./runone.sh <version> <ruta_imagen>"
+    echo "Ejemplo: ./runone.sh optimo_async mi_imagen.png"
     exit 1
 fi
 
@@ -34,8 +34,8 @@ make
 
 # 3. Ejecutar si la compilación fue exitosa
 if [ -x "detect" ]; then
-    echo "==> Ejecutando ./detect con la imagen proporcionada..."
-    ./detect "$IMAGE_PATH"
+    echo "==> Ejecutando time ./detect con la imagen proporcionada..."
+    /usr/bin/time -p ./detect "$IMAGE_PATH"
 else
     echo "Error: La compilación falló, no se generó el binario 'detect'."
     exit 1

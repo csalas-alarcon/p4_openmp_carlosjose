@@ -58,7 +58,7 @@ Image<unsigned char> compute_srm(const Image<unsigned char> &image, int kernel_s
     srm = srm * 255;
     Image<unsigned char> result = srm.convert<unsigned char>();
     auto end = std::chrono::steady_clock::now();
-    std::cout<<"SRM elapsed time: "<<std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()<<"ms"<<std::endl;
+    std::cout<< kernel_size <<"SRM elapsed time: "<<std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()<<"ms"<<std::endl;
     return result;
 }
 
@@ -84,7 +84,7 @@ Image<unsigned char> compute_dct(const Image<unsigned char> &image, int block_si
     }
     Image<unsigned char> result = grayscale.convert<unsigned char>();
     auto end = std::chrono::steady_clock::now();
-    std::cout<<"DCT elapsed time: "<<std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()<<"ms"<<std::endl;
+    std::cout << invert <<"DCT elapsed time: "<<std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count()<<"ms"<<std::endl;
     return result;
 }
 
