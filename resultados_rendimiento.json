@@ -1,0 +1,134 @@
+{
+  "computer_id": "brian-B650-AORUS-ELITE-AX",
+  "results": [
+    {
+      "version": "source",
+      "image": "compressions.png",
+      "srm_3x3_ms": 103,
+      "srm_5x5_ms": 195,
+      "ela_ms": 66,
+      "dct_inverse_ms": 1134,
+      "dct_direct_ms": 696,
+      "real_s": 2.30,
+      "user_s": 2.29,
+      "sys_s": 0.01
+    }
+    ,
+    {
+      "version": "source",
+      "image": "face_swap_enhanced.png",
+      "srm_3x3_ms": 103,
+      "srm_5x5_ms": 191,
+      "ela_ms": 64,
+      "dct_inverse_ms": 1128,
+      "dct_direct_ms": 695,
+      "real_s": 2.30,
+      "user_s": 2.28,
+      "sys_s": 0.01
+    }
+    ,
+    {
+      "version": "suboptimized",
+      "image": "compressions.png",
+      "srm_3x3_ms": 102,
+      "srm_5x5_ms": 194,
+      "ela_ms": 64,
+      "dct_inverse_ms": 341,
+      "dct_direct_ms": 246,
+      "real_s": 1.06,
+      "user_s": 13.05,
+      "sys_s": 0.04
+    }
+    ,
+    {
+      "version": "suboptimized",
+      "image": "face_swap_enhanced.png",
+      "srm_3x3_ms": 103,
+      "srm_5x5_ms": 196,
+      "ela_ms": 64,
+      "dct_inverse_ms": 305,
+      "dct_direct_ms": 270,
+      "real_s": 1.06,
+      "user_s": 12.61,
+      "sys_s": 0.03
+    }
+    ,
+    {
+      "version": "optimized_async",
+      "image": "compressions.png",
+      "srm_3x3_ms": 47,
+      "srm_5x5_ms": 73,
+      "ela_ms": 146,
+      "dct_inverse_ms": 184,
+      "dct_direct_ms": 158,
+      "real_s": 0.24,
+      "user_s": 3.99,
+      "sys_s": 0.03
+    }
+    ,
+    {
+      "version": "optimized_async",
+      "image": "face_swap_enhanced.png",
+      "srm_3x3_ms": 107,
+      "srm_5x5_ms": 109,
+      "ela_ms": 132,
+      "dct_inverse_ms": 187,
+      "dct_direct_ms": 159,
+      "real_s": 0.24,
+      "user_s": 3.96,
+      "sys_s": 0.02
+    }
+    ,
+    {
+      "version": "optimized_tasks",
+      "image": "compressions.png",
+      "srm_3x3_ms": 165,
+      "srm_5x5_ms": 168,
+      "ela_ms": 168,
+      "dct_inverse_ms": 178,
+      "dct_direct_ms": 159,
+      "real_s": 0.29,
+      "user_s": 4.00,
+      "sys_s": 0.06
+    }
+    ,
+    {
+      "version": "optimized_tasks",
+      "image": "face_swap_enhanced.png",
+      "srm_3x3_ms": 168,
+      "srm_5x5_ms": 172,
+      "ela_ms": 175,
+      "dct_inverse_ms": 178,
+      "dct_direct_ms": 156,
+      "real_s": 0.30,
+      "user_s": 4.08,
+      "sys_s": 0.06
+    }
+    ,
+    {
+      "version": "hiperoptimized",
+      "image": "compressions.png",
+      "srm_3x3_ms": 15522,
+      "srm_5x5_ms": 15393,
+      "ela_ms": 87,
+      "dct_inverse_ms": 256,
+      "dct_direct_ms": 244,
+      "real_s": 15.62,
+      "user_s": 82.17,
+      "sys_s": 113.54
+    }
+    ,
+    {
+      "version": "hiperoptimized",
+      "image": "face_swap_enhanced.png",
+      "srm_3x3_ms": 15877,
+      "srm_5x5_ms": 15957,
+      "ela_ms": 171,
+      "dct_inverse_ms": 276,
+      "dct_direct_ms": 232,
+      "real_s": 16.04,
+      "user_s": 83.10,
+      "sys_s": 116.40
+    }
+  ]
+}
