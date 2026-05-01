@@ -56,3 +56,12 @@ El programa procesa imágenes en formato PNG o JPG que deben ser cuadradas. Tras
 ```
 
 El programa generará varias imágenes de salida en el mismo directorio de ejecución, mostrando los resultados de los distintos filtros (SRM 3x3, SRM 5x5, ELA, DCT Directa, DCT Inversa).
+
+*** 
+## Diagrama de Dependencias
+
+<div align="left">
+  <picture>
+    <img src="./diagrama_dependencias/diagrama-dependencias.png"/>
+  </picture>
+</div>
